@@ -43,7 +43,7 @@ public class BddAccess {
 		// Connection a la BDD Films
 		try {
 			cnx = DriverManager.getConnection("jdbc:mysql://localhost/"+"banque"+"?autoReconnect=true&useSSL=false","root","");
-			System.out.println("Connexion BDD Banque OK!!");
+			System.out.println("Connexion BDD Banque OK!");
 		}
 		catch (SQLException e) {
 			// TODO Auto-generated catch block
