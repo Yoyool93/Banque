@@ -9,8 +9,14 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+
+//Attention !! Tester si les zones de saisies sont bien remplies 
+//Attention !! Mettre des ascenseurs dans le TextArea
+//Attention !! verifier que lorsqu'on demande une ouverture d'un compte pour un client , ce dernier n'en possede pas deja un
+//Mettre un flag cptOuvert a true lors de l'ouverture du compte et tester ce flag
 
 public class IhmComptes extends JFrame implements ActionListener{
 
@@ -19,6 +25,8 @@ public class IhmComptes extends JFrame implements ActionListener{
 	
 	// Liste des comptes
 	private LinkedList<Compte> listCpt;
+	//Liste des clients
+	private LinkedList<Client> listClients;
 	
 	// Numero de compte
 	private int numeroCompte;
@@ -48,15 +56,21 @@ public class IhmComptes extends JFrame implements ActionListener{
 	// Zones de texte Area
 	private JTextArea zoneResultat;
 	
+	//Ascenseurs
+	private JScrollPane scroll=new JScrollPane(zoneResultat);
+	
 	// Boutons
 	private JButton bCreerClient;
-	private JButton bCreerCpt;
+	private JButton bOuvrirCpt;
 	private JButton bDebiterCpt;
 	private JButton bCrediterCpt;
 	private JButton bConsulterCpt;
-	private JButton bSaveBdd;
+	
 	
 	private Compte cpt; // Variable temporaire
+	private Client client;
+	//Creation de l'objet banque 
+	private Banque bnk ;
 	
 	// Constructeur
 	public IhmComptes() {
@@ -74,29 +88,32 @@ public class IhmComptes extends JFrame implements ActionListener{
 		zoneSolde = new JTextField(20);
 		zoneNom   = new JTextField(20);
 		zonePrenom   = new JTextField(20);
-		zoneAdresse   = new JTextField(30);
+		zoneAdresse   = new JTextField(20);
 		zoneIdentClient = new JTextField(20);
 		zoneNumCpt = new JTextField(20);
 		zoneMontant= new JTextField(20);
-		zoneResultat = new JTextArea(10, 20);
+		zoneResultat = new JTextArea(40,100);
 		
 		bCreerClient = new JButton("Creer client");
-		bCreerCpt = new JButton("Aller ouvrir compte");
+		bOuvrirCpt = new JButton("Aller ouvrir compte");
 		bDebiterCpt = new JButton("Aller retirer somme");
 		bCrediterCpt = new JButton("Aller deposer compte");
 		bConsulterCpt = new JButton("Aller consulter compte");
-		bSaveBdd = new JButton("Sauvegarde BDD");
+		
 		
 		// Creation du panel
 		pan = new JPanel();
 		
 		// Creation de la liste des comptes
 		listCpt = new LinkedList<Compte>();
+		//Creation de la liste des clients
+		listClients= new LinkedList<Client>();
 		
 		numeroCompte = 0;
 		
 		// Creer l'objet BddAccess
 		refBdd = new BddAccess();
+		
 		
 		// Charger le driver de BDD
 		refBdd.chargerDriver();
@@ -107,12 +124,17 @@ public class IhmComptes extends JFrame implements ActionListener{
 		// Creer la requete
 		refBdd.creerRequete();
 		
+		//Creation de l'objet banque
+		
+		bnk=new Banque("SG","55 rue Dufric",1000000,refBdd, this);
+		
+		
 		// Ajoute un titre a la fenetre
 		setTitle("Gestion Comptes IHM");
 		
 		// Dimensionner la fenetre (300 pixels de large 
 		// sur 400 de haut
-		setSize(990, 450);
+		setSize(810, 530);
 				
 		// Rend la fenetre visible a l'ecran
 		setVisible(true);
@@ -133,177 +155,215 @@ public class IhmComptes extends JFrame implements ActionListener{
 		pan.add(zonePrenom);
 		pan.add(labelAdresse);
 		pan.add(zoneAdresse);
-		
 		pan.add(labelIdentClient);
 		pan.add(zoneIdentClient);
-		
 		pan.add(labelNumCpt);
 		pan.add(zoneNumCpt);
-		
 		pan.add(labelMontant);
 		pan.add(zoneMontant);
-		
 		pan.add(labelSolde);
 		pan.add(zoneSolde);
-		
 		pan.add(bCreerClient);
-		pan.add(bCreerCpt);
+		pan.add(bOuvrirCpt);
 		pan.add(bDebiterCpt);
 		pan.add(bCrediterCpt);
 		pan.add(bConsulterCpt);
 		pan.add(labelResultat);
-		pan.add(zoneResultat);
-		pan.add(bSaveBdd);
+		//pan.add(zoneResultat);
+		pan.add(scroll);
+		scroll.setAutoscrolls(true);
 		
 		// Enregistrer les boutons comme sources
 		// d'evenements aupres de la fenetre IhmComptes
 		bCreerClient.addActionListener(this);
-		bCreerCpt.addActionListener(this);
+		bOuvrirCpt.addActionListener(this);
 		bDebiterCpt.addActionListener(this);
 		bCrediterCpt.addActionListener(this);
 		bConsulterCpt.addActionListener(this);
 		
-		bSaveBdd.addActionListener(this);
+	
 	}
 
 	@Override
 	public void actionPerformed(ActionEvent evt) {
 		
-		String text, proprio;
+		String text,proprio;
 		float nb;
 		int numCpt;
-		
+		int id;
+		Client cli;
 		
 		// Determiner la source de l'evenement
-		if(evt.getSource() == bCreerCpt) {
+		if(evt.getSource() == bOuvrirCpt) {
 			
-			// Recuperer les contenus des zones solde
-			// et nom du proprietaire
+			// Recuperer les contenus des zones Id,solde 
+			
+			
+			//Recuperer l'identifiant du client
+			
+			text = zoneIdentClient.getText();
+			id=Integer.parseInt(text);
 			
 			// Recuperer le solde et le convertir en float
 			text = zoneSolde.getText();
-			nb = Float.parseFloat(text);
+			nb= Float.parseFloat(text);
+			boolean trouve=false;
+			int i=0;
 			
-			// Recuperer le nom du proprio
-			proprio = zoneNom.getText();
-			
-			// Recuperer le numero de compte
-			text = zoneNumCpt.getText();
-			numCpt = Integer.parseInt(text);
-			
-			// Creer l'objet Compte 
-			cpt = new Compte(numCpt, nb, proprio);
-			/*
-			System.out.println(cpt.consulter());
-			System.out.println(cpt.getNumCompte());
-			System.out.println(cpt.getNomProprietaire());
-			*/
-			// Sauvegarder le compte cree dans la liste
-			listCpt.add(cpt);
-			/*
-			System.out.println( cpt);
-			for(int i = 0; i< listCpt.size(); i++) {
-				System.out.println("OK");
+			//Verifier si cet Id existe dans la liste des client
+			while(trouve == false && i< listClients.size()) {
+				
+				cli=listClients.get(i);
+				
+				if(id ==cli.getId()){
+					trouve=true;
+					cli.allerOuvrirUnCompte(nb);
+				}
+				i++;
 			}
-			*/
-			
-			/*--
-			zoneResultat.append(cpt.getNomProprietaire() +"\n");
-			zoneResultat.append(cpt.getNumCompte() +"\n");
-			zoneResultat.append(cpt.consulter() +"\n");
-			--*/
-			
+			if(trouve==false) {
+				zoneResultat.append("Client non trouve " + "\n");
+				
+			}
 		}
 		else if(evt.getSource() == bDebiterCpt) {
 			
-			// Recuperer le numero de compte a debiter
-			text = zoneNumCpt.getText();
+		float somme;
 			
+			// Recuperer l'ident du client
+			text = zoneIdentClient.getText();
+					
 			// Convertir le numero saisi en int
-			numCpt = Integer.parseInt(text);
+			id=Integer.parseInt(text);
 			
-			// Recherche du compte dans la liste
-			cpt = listCpt.get(numCpt-1);
+			//Recuperer le montant a crediter
+			text=zoneMontant.getText();
 			
-			// Debiter le compte
-			cpt.debiter(200);
+			//Convertir le montant saisi en float
+			somme =Float.parseFloat(text);
+		
+			//Recherche du client dans la liste
+			if(listClients.isEmpty()) {
+				zoneResultat.append("La liste de client est vide !" +"\n");
+				
+			}
+			else {
+				boolean trouve=false;
+				int i=0;
+				
+				//Verifier si cet Id existe dans la liste des clients
+				while(trouve==false&& i<listClients.size()) {
+					cli=listClients.get(i);
+					
+					if(id==cli.getId()){
+						trouve=true;
+						cli.allerRetirerSommeDeCompte(id,somme);
+						
+					}
+					i++;
+				}
+				if(trouve==false) {
+					zoneResultat.append("Client non trouve" + "\n");
+					
+				}
+			}
 		}
 		else if(evt.getSource() == bCrediterCpt) {
+			float somme;
 			
-			// Recuperer le numero de compte a debiter
-			text = zoneNumCpt.getText();
-						
+			// Recuperer l'ident du client
+			text = zoneIdentClient.getText();
+					
 			// Convertir le numero saisi en int
-			numCpt = Integer.parseInt(text);
-						
-			// Recherche du compte dans la liste
-			if(listCpt.size() !=0) {
-				cpt = listCpt.get(numCpt-1);
-				
-				// Debiter le compte
-				cpt.crediter(200);
-			}
-			else
-				System.out.println("Liste comptes vide");
+			id=Integer.parseInt(text);
 			
+			//Recuperer le montant a crediter
+			text=zoneMontant.getText();
+			
+			//Convertir le montant saisi en float
+			somme =Float.parseFloat(text);
+		
+			//Recherche du client dans la liste
+			if(listClients.isEmpty()) {
+				zoneResultat.append("La liste de client est vide !" +"\n");
+				
+			}
+			else {
+				boolean trouve=false;
+				int i=0;
+				//Verifier si cet Id existe dans la liste des clients
+				while(trouve==false && i<listClients.size()) {
+					cli=listClients.get(i);
+					
+					if(id==cli.getId()){
+						trouve=true;
+						cli.allerDeposerSommeSurCompte(id,somme);
+						
+					}
+					i++;
+				}
+				if(trouve==false) {
+					zoneResultat.append("Client non trouve" + "\n");
+					
+				}
+			}
 		}
 		else if(evt.getSource() == bConsulterCpt) {
 			// Recuperer le numero de compte a debiter
 			text = zoneNumCpt.getText();
+			text=zoneIdentClient.getText();
 									
-			// Convertir le numero saisi en int
-			numCpt = Integer.parseInt(text);
-			System.out.println( "Num cpt "+numCpt);
+			// Convertir l'Id saisi en int
+			id = Integer.parseInt(text);
+			System.out.println( "Id" +id);
 									
 			// Recherche du compte dans la liste
-			if(listCpt.isEmpty()) {
+			if(listClients.isEmpty()) {
 				zoneResultat.append("La liste est vide!!"+"\n");
 			}
 			else {
-				cpt = listCpt.get(numCpt-1);
-			
-				zoneResultat.append(cpt.getNomProprietaire() +"\n");
-				zoneResultat.append(cpt.consulter() +"\n");
-			}
-		}
-		else if(evt.getSource() == bSaveBdd) {
-			
-			// Parourir la liste des comptes
-			// pour les enrgistrer dans la table
-			// Verifier si la liste est non vide
-			if(listCpt.isEmpty()) {
-				zoneResultat.append("La liste est vide!!"+"\n");
-			}
-			else {
-				
-				// Delete de la table Compte
-				String req = "DELETE FROM compte";
-				refBdd.executerUpdate(req);
-				
-				// Parcourir la liste des comptes
-				int i;
-				
-				for(i = 0; i < listCpt.size(); i++) {
-					
-					// Recuperer de la liste l'objet Compte
-					// se trouvant a l'indice i
-					cpt = listCpt.get(i);
-					
-					// Recuperer les valeurs des attributs de
-					// l'objet cpt (numCompte, solde, nomProprio...)
-					numCpt = cpt.getNumCompte();
-					nb = cpt.consulter();
-					text = cpt.getNomProprietaire();
-					
-					// Formater la requete INSERT INTO
-					String requete;
-					requete = "INSERT INTO compte (numero,nom,solde) VALUES (";
-					requete = requete + numCpt + ","+"'" + text + "'" + "," +nb +")";  
-					
-					// Executer la requete
-					refBdd.executerUpdate(requete);
+				boolean trouve=false;
+				int i=0;
+				//Verifier si cet Id existe dans la liste des clients
+				while(trouve==false && i<listClients.size()) {
+					cli=listClients.get(i);
+					if(id==cli.getId()) {
+						trouve=true;
+						cli.allerConsulterCompte();
+					}
+					i++;
 				}
+				if(trouve==false) {
+					
+					zoneResultat.append("Client non trouvé" +"\n");
+				}
+				
 			}
 		}
+			else if(evt.getSource() == bCreerClient) {
+			
+			// Recuperer l'id client et le convertir en int
+			text = zoneIdentClient.getText();
+			id = Integer.parseInt(text);
+			String nom = zoneNom.getText();
+			String prenom = zonePrenom.getText();
+			String adresse = zoneAdresse.getText();
+			
+			client = new Client(id, nom, prenom,adresse, bnk);
+			
+			listClients.add(client);
+			
+			}
+		
+	}
+	
+	
+	public void afficherDansZoneArea(String message) {
+		
+		zoneResultat.append(message);
+		zoneResultat.append("\n");
+		
 	}
 }
+		
+	

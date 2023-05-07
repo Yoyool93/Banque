@@ -4,13 +4,14 @@ public class Compte {
 	// Attributs
 	private int numCompte;
 	private float solde;
-	private String nomProprietaire;
-	
+	private int idClient;
+	private IhmComptes refIhm;
 	// Constructeur
-	public Compte(int numCpt, float soldInit, String nom) {
-		setNumCompte(numCpt);
+	public Compte(int numCpt, float soldInit, int id,IhmComptes ihm) {
+		numCompte=numCpt;
 		solde = soldInit;
-		setNomProprietaire(nom);
+		idClient=id;
+		refIhm =ihm;
 	}
 	
 	// Methodes 
@@ -20,7 +21,13 @@ public class Compte {
 	
 
 	public void debiter(float somme) {
+		if(solde>= somme) {
 		solde = solde - somme;
+	}
+		else { 
+			refIhm.afficherDansZoneArea("Desole solde insuffisant ");
+		}
+		
 	}
 	
 	public void crediter(float somme) {
@@ -35,11 +42,11 @@ public class Compte {
 		this.numCompte = numCompte;
 	}
 
-	public String getNomProprietaire() {
-		return nomProprietaire;
+	public int getidCli() {
+		return idClient;
 	}
 
-	public void setNomProprietaire(String nomProprietaire) {
-		this.nomProprietaire = nomProprietaire;
+	public void setidCli(int idCli) {
+		this.idClient = idCli;
 	}
 }
