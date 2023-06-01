@@ -52,7 +52,7 @@ public class BddAccess {
 	}
 	
 	public void creerRequete() {
-		// construction de la requ�te SQL
+		// construction de la requete SQL
 		// Creation de la requete
 		try {
 			st = cnx.createStatement();
