@@ -117,6 +117,9 @@ public class IhmComptes extends JFrame implements ActionListener{
 		// Creer la requete
 		refBdd.creerRequete();
 		
+		//Passer la reference de l'Ihm a la Bdd
+		refBdd.setRefIhm(this);
+		
 		//Creation de l'objet banque
 		
 		bnk=new Banque("SG","55 rue Dufric",1000000,refBdd, this);
