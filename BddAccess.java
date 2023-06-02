@@ -20,6 +20,9 @@ public class BddAccess {
 	// colonnes, nom de la table ...)
 	private ResultSetMetaData resMeta = null;
 	
+	//Reference vers Ihm afin d'ecrire les reponses dans la JTextArea
+	private IhmComptes refIhm;
+	
 	// Constructeur
 	
 	// Methodes
@@ -112,4 +115,55 @@ public class BddAccess {
 			e.printStackTrace();
 		}
 	}
+
+public ResultSet recupereReponse() {
+		String[] rep;
+		String s = "";
+		
+		try {
+			resMeta = res.getMetaData();
+			
+			// Nombre de colonnes contenues dans 
+			// la reponse
+			int nbCols = resMeta.getColumnCount();
+			
+			for(int i = 1; i <= nbCols; i=i+1) {
+				
+				//System.out.print(resMeta.getColumnName(i) + " | " +"    ");
+				refIhm.afficherDansZoneArea(resMeta.getColumnName(i) + " | " +"    ");
+			}
+			//System.out.println();
+			refIhm.afficherDansZoneArea("\n");
+			
+			// Parcours de la reponserefIhm.afficherDansZoneArea(""); res
+			
+			while(res.next()) {
+				for(int i = 1; i <= nbCols; i++){ 
+					refIhm.afficherDansZoneArea(res.getObject(i).toString() + "   ");
+					
+					//System.out.print(res.getObject(i).toString() + "   ");
+				}
+				
+				
+				//System.out.println();
+				refIhm.afficherDansZoneArea("\n");
+				//System.out.println("------------------------------------");
+				refIhm.afficherDansZoneArea("------------------------------------");
+				refIhm.afficherDansZoneArea("\n");
+			}
+			
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return res;
+	}
+	
+	public void setRefIhm(IhmComptes ihm ) {
+		refIhm = ihm;
+	}
 }
+
+
+
